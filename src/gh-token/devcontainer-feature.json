@@ -1,0 +1,36 @@
+{
+    "id": "gh-token",
+    "version": "1.0.0",
+    "name": "GitHub Token CLI Extension",
+    "description": "Installs the GitHub Token CLI Extension. Auto-detects latest version and installs needed dependencies.",
+    "options": {
+        "version": {
+            "type": "string",
+            "proposals": [
+                "latest",
+                "none"
+            ],
+            "default": "latest",
+            "description": "Select version of the GitHub Token CLI Extension, if not latest."
+        },
+        "installDirectlyFromGitHubRelease": {
+            "type": "boolean",
+            "default": true
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "github.copilot.chat.codeGeneration.instructions": [
+                    {
+                        "text": "This dev container includes the GitHub Token CLI Extension (`gh-token`), which is pre-installed and available on the `PATH`."
+                    }
+                ]
+            }
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/devcontainers/features/github-cli"
+    ]
+}
