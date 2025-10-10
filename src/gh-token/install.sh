@@ -247,3 +247,7 @@ gh_token_path=$(download_with_retry "$gh_token_url")
 mkdir -p ${HOME}/.local/share/gh/extensions/gh-token
 mv "$gh_token_path" ${HOME}/.local/share/gh/extensions/gh-token/gh-token
 chmod +x ${HOME}/.local/share/gh/extensions/gh-token/gh-token
+
+mkdir -p "${_REMOTE_USER_HOME}/.local/share/gh/extensions"
+cp -rf "${HOME}/.local/share/gh/extensions/gh-token" "${_REMOTE_USER_HOME}/.local/share/gh/extensions/gh-token"
+chown -R "${_REMOTE_USER}:${_REMOTE_USER}" "${_REMOTE_USER_HOME}/.local/share/gh/extensions/gh-token"

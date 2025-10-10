@@ -1,6 +1,6 @@
 {
     "id": "gh-token",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "GitHub Token CLI Extension",
     "description": "Installs the GitHub Token CLI Extension. Auto-detects latest version and installs needed dependencies.",
     "options": {
