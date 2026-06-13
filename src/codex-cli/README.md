@@ -1,3 +1,4 @@
+
 # Codex CLI (codex-cli)
 
 Installs Codex CLI and the Codex VS Code extension.
@@ -28,6 +29,9 @@ This Feature should work on recent versions of Debian/Ubuntu-based distributions
 
 `bash` is required to execute the `install.sh` script.
 
+The Feature installs the standalone Codex CLI package with OpenAI's official installer and places the `codex` command on the global `PATH` at `/usr/local/bin/codex`.
+
+
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/sekhar-isovalent/devcontainer-features/blob/main/src/codex-cli/devcontainer-feature.json). Add additional notes to a `NOTES.md`._
+_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/sekhar-isovalent/devcontainer-features/blob/main/src/codex-cli/devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
