@@ -20,29 +20,57 @@ esac
 
 # Get version if not specified or if latest
 if [ "$DOCKER_VERSION" = "latest" ]; then
-    DOCKER_VERSION=$(curl -fsSL "https://api.github.com/repos/moby/moby/releases/latest" | grep -oP '"tag_name": "\K[^"]+')
+    echo "Fetching latest Docker version..."
+    DOCKER_VERSION=$(curl -fsSL "https://api.github.com/repos/moby/moby/releases/latest" | grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -z "$DOCKER_VERSION" ]; then
+        echo "Failed to determine latest Docker version, using 27.0.3 as fallback"
+        DOCKER_VERSION="27.0.3"
+    fi
     DOCKER_VERSION="${DOCKER_VERSION#v}"
-    echo "Latest Docker version: $DOCKER_VERSION"
+    echo "Using Docker version: $DOCKER_VERSION"
 fi
 
-# Download Docker CLI
-DOWNLOAD_URL="https://download.docker.com/linux/static/stable/${DOCKER_ARCH}/docker-${DOCKER_VERSION}.tgz"
+# Create temp directory
 DOCKER_TEMP_DIR=$(mktemp -d)
+trap "rm -rf $DOCKER_TEMP_DIR" EXIT
+
 DOCKER_ARCHIVE="${DOCKER_TEMP_DIR}/docker-${DOCKER_VERSION}.tgz"
 
+# Download Docker CLI with retry logic
+DOWNLOAD_URL="https://download.docker.com/linux/static/stable/${DOCKER_ARCH}/docker-${DOCKER_VERSION}.tgz"
 echo "Downloading Docker CLI from: $DOWNLOAD_URL"
-curl -fsSL -o "$DOCKER_ARCHIVE" "$DOWNLOAD_URL"
+
+for i in {1..3}; do
+    if curl -fsSL -o "$DOCKER_ARCHIVE" "$DOWNLOAD_URL"; then
+        break
+    fi
+    if [ $i -lt 3 ]; then
+        echo "Download attempt $i failed, retrying..."
+        sleep 2
+    else
+        echo "Failed to download Docker CLI after 3 attempts"
+        exit 1
+    fi
+done
+
+# Verify archive was downloaded
+if [ ! -f "$DOCKER_ARCHIVE" ]; then
+    echo "Docker archive not found at $DOCKER_ARCHIVE"
+    exit 1
+fi
 
 # Extract and install
 echo "Extracting Docker CLI..."
 tar -xzf "$DOCKER_ARCHIVE" -C "$DOCKER_TEMP_DIR"
 
+if [ ! -f "$DOCKER_TEMP_DIR/docker/docker" ]; then
+    echo "Docker binary not found in archive"
+    exit 1
+fi
+
 echo "Installing Docker CLI to /usr/local/bin..."
 cp "$DOCKER_TEMP_DIR/docker/docker" /usr/local/bin/docker
 chmod +x /usr/local/bin/docker
-
-# Cleanup
-rm -rf "$DOCKER_TEMP_DIR"
 
 # Verify installation
 echo "Verifying Docker CLI installation..."
