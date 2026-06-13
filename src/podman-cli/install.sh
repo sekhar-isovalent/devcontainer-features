@@ -21,24 +21,35 @@ esac
 PODMAN_TEMP_DIR=$(mktemp -d)
 trap "rm -rf $PODMAN_TEMP_DIR" EXIT
 
-# Resolve download URL
+# Resolve download URL by querying GitHub API
+echo "Resolving Podman download URL..."
+
 if [ "$PODMAN_VERSION" = "latest" ]; then
-    echo "Fetching latest Podman version..."
-    DOWNLOAD_URL=$(curl -fsSL "https://api.github.com/repos/containers/podman/releases?per_page=10" | jq -r '.[] | select(.prerelease==false) | .assets[] | select(.name | test("podman-remote-static-linux_'${PODMAN_ARCH}'")) | .browser_download_url' | head -1)
-    if [ -z "$DOWNLOAD_URL" ]; then
-        echo "Failed to find latest Podman release for architecture ${PODMAN_ARCH}"
-        exit 1
-    fi
+    API_URL="https://api.github.com/repositories/109145553/releases/latest"
 else
-    DOWNLOAD_URL="https://github.com/containers/podman/releases/download/v${PODMAN_VERSION}/podman-remote-static-linux_${PODMAN_ARCH}.tar.gz"
+    API_URL="https://api.github.com/repositories/109145553/releases/tags/v${PODMAN_VERSION}"
 fi
 
-echo "Using download URL: $DOWNLOAD_URL"
+json_response=$(curl -fsSL "$API_URL")
+
+# Extract browser_download_url for podman-remote-static-linux_${PODMAN_ARCH}
+# Try using jq if available, otherwise fall back to grep
+if command -v jq &> /dev/null; then
+    DOWNLOAD_URL=$(echo "$json_response" | jq -r '.assets[] | select(.name | contains("podman-remote-static-linux_'"${PODMAN_ARCH}"'")) | .browser_download_url' | head -1)
+else
+    DOWNLOAD_URL=$(echo "$json_response" | grep -A 3 "podman-remote-static-linux_${PODMAN_ARCH}.tar.gz" | grep "browser_download_url" | grep -o 'https://[^"]*' | head -1)
+fi
+
+if [ -z "$DOWNLOAD_URL" ]; then
+    echo "Failed to find Podman ${PODMAN_VERSION} release for architecture ${PODMAN_ARCH}"
+    exit 1
+fi
+
+echo "Downloading from: $DOWNLOAD_URL"
 
 PODMAN_ARCHIVE="${PODMAN_TEMP_DIR}/podman-remote.tar.gz"
 
 # Download Podman CLI with retry logic
-echo "Downloading Podman CLI..."
 for i in {1..3}; do
     if curl -fsSL -o "$PODMAN_ARCHIVE" "$DOWNLOAD_URL"; then
         break
@@ -62,14 +73,13 @@ fi
 echo "Extracting Podman CLI..."
 tar -xzf "$PODMAN_ARCHIVE" -C "$PODMAN_TEMP_DIR"
 
-# Find the podman binary (it may be named podman-remote in the archive)
-PODMAN_BINARY=""
-if [ -f "$PODMAN_TEMP_DIR/podman-remote" ]; then
-    PODMAN_BINARY="$PODMAN_TEMP_DIR/podman-remote"
-elif [ -f "$PODMAN_TEMP_DIR/podman" ]; then
-    PODMAN_BINARY="$PODMAN_TEMP_DIR/podman"
-else
+# Find the podman binary (it's in bin/ subdirectory with architecture suffix)
+PODMAN_BINARY=$(find "$PODMAN_TEMP_DIR" -type f \( -name "podman-remote-static*" -o -name "podman-remote" -o -name "podman" \) | head -1)
+
+if [ -z "$PODMAN_BINARY" ] || [ ! -f "$PODMAN_BINARY" ]; then
     echo "Podman binary not found in archive"
+    echo "Archive contents:"
+    tar -tzf "$PODMAN_ARCHIVE"
     exit 1
 fi
 

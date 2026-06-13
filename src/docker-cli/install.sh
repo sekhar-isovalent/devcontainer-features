@@ -21,12 +21,12 @@ esac
 # Get version if not specified or if latest
 if [ "$DOCKER_VERSION" = "latest" ]; then
     echo "Fetching latest Docker version..."
-    DOCKER_VERSION=$(curl -fsSL "https://api.github.com/repos/moby/moby/releases/latest" | grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4)
+    # Query the Docker download page to find the latest version
+    DOCKER_VERSION=$(curl -fsSL "https://download.docker.com/linux/static/stable/${DOCKER_ARCH}/" | grep -o 'docker-[0-9.]*\.tgz' | sed 's/docker-//;s/\.tgz//' | sort -V | tail -1)
     if [ -z "$DOCKER_VERSION" ]; then
-        echo "Failed to determine latest Docker version, using 27.0.3 as fallback"
-        DOCKER_VERSION="27.0.3"
+        echo "Failed to determine latest Docker version, using 29.5.3 as fallback"
+        DOCKER_VERSION="29.5.3"
     fi
-    DOCKER_VERSION="${DOCKER_VERSION#v}"
     echo "Using Docker version: $DOCKER_VERSION"
 fi
 
