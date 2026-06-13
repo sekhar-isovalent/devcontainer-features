@@ -1,0 +1,25 @@
+{
+    "id": "codex-cli",
+    "version": "1.0.0",
+    "name": "Codex CLI",
+    "documentationURL": "https://github.com/sekhar-isovalent/devcontainer-features/tree/main/src/codex-cli",
+    "description": "Installs Codex CLI and the Codex VS Code extension.",
+    "options": {
+        "version": {
+            "type": "string",
+            "proposals": [
+                "latest"
+            ],
+            "default": "latest",
+            "description": "Select the Codex CLI version to install."
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "openai.chatgpt"
+            ]
+        }
+    },
+    "installsAfter": []
+}
